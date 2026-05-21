@@ -1,0 +1,41 @@
+{
+  "supplier": "ABC Traders",
+  "supplier_gstin": "29ABCDE1234F1Z5",
+  "invoice_number": "AT-1001",
+  "invoice_date": "2026-05-18",
+  "due_date": "",
+  "currency": "INR",
+  "po_number": "PO-7788",
+  "payment_terms": "",
+  "items": [
+    {
+      "description": "Widget A",
+      "qty": 2,
+      "uom": "Nos",
+      "rate": 100,
+      "amount": 200,
+      "tax_percent": 18,
+      "confidence": 0.94
+    },
+    {
+      "description": "Widget B",
+      "qty": 1,
+      "uom": "Nos",
+      "rate": 50,
+      "amount": 50,
+      "tax_percent": 18,
+      "confidence": 0.92
+    }
+  ],
+  "subtotal": 250,
+  "taxes": [
+    {
+      "description": "GST",
+      "rate": 18,
+      "amount": 45
+    }
+  ],
+  "grand_total": 295,
+  "confidence": 0.93,
+  "warnings": []
+}

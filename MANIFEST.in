@@ -1,0 +1,5 @@
+recursive-include invoice_import *.json
+recursive-include invoice_import *.js
+recursive-include invoice_import *.py
+recursive-include invoice_import *.md
+recursive-include invoice_import *.txt

@@ -1,0 +1,28 @@
+[project]
+name = "invoice_import"
+authors = [
+    { name = "ERPNext Invoice Import", email = "admin@example.com" }
+]
+description = "AI assisted invoice OCR importer for ERPNext Purchase Invoices"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "openai>=1.30.0",
+    "google-cloud-documentai>=2.25.0",
+    "pdfplumber>=0.11.0",
+    "PyMuPDF>=1.24.0",
+    "Pillow>=10.0.0",
+    "pillow-heif>=0.16.0",
+    "numpy>=1.26,<2",
+    "opencv-python-headless>=4.9,<4.12",
+    "pytesseract>=0.3.10",
+    "rapidfuzz>=3.6.0",
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.dev-dependencies]
+pytest = "~=8.0.0"

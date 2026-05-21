@@ -1,0 +1,74 @@
+{
+ "actions": [],
+ "creation": "2026-05-20 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "source_label",
+  "target_field",
+  "page_number",
+  "region_json",
+  "value_hint",
+  "required",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "source_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Source Label",
+   "reqd": 1
+  },
+  {
+   "fieldname": "target_field",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Target Field",
+   "options": "supplier\nsupplier_gstin\ninvoice_number\ninvoice_date\ndue_date\npo_no\npayment_terms\ncurrency\ngrand_total\nitem_description\nitem_qty\nitem_uom\nitem_hsn_sac\nitem_rate\nitem_amount\nitem_mrp\ntax_description\ntax_amount",
+   "reqd": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "page_number",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Page"
+  },
+  {
+   "fieldname": "region_json",
+   "fieldtype": "Long Text",
+   "label": "Region JSON"
+  },
+  {
+   "fieldname": "value_hint",
+   "fieldtype": "Small Text",
+   "label": "Value Hint"
+  },
+  {
+   "default": "0",
+   "fieldname": "required",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Required"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-20 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Invoice Import",
+ "name": "Supplier Invoice Template Field",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

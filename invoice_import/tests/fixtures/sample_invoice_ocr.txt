@@ -1,0 +1,13 @@
+ABC Traders
+GSTIN: 29ABCDE1234F1Z5
+Invoice No: AT-1001
+Invoice Date: 18/05/2026
+PO No: PO-7788
+
+Description Qty Rate Amount GST
+Widget A 2 100.00 200.00 18
+Widget B 1 50.00 50.00 18
+
+Subtotal 250.00
+GST 45.00
+Grand Total 295.00

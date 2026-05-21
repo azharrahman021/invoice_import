@@ -1,0 +1,202 @@
+{
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:INV-IMP-{YYYY}-{#####}",
+  "creation": "2026-05-18 00:00:00.000000",
+  "doctype": "DocType",
+  "document_type": "Document",
+  "engine": "InnoDB",
+  "field_order": [
+    "attachment",
+    "invoice_template",
+    "company",
+    "warehouse",
+    "status",
+    "confidence_score",
+    "linked_purchase_invoice",
+    "section_extraction",
+    "extracted_json",
+    "processing_logs",
+    "raw_ocr_text",
+    "section_controls",
+    "auto_create_supplier",
+    "supplier_similarity_threshold",
+    "item_similarity_threshold",
+    "last_error",
+    "retry_count",
+    "queued_at",
+    "processed_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "attachment",
+      "fieldtype": "Attach",
+      "in_list_view": 1,
+      "label": "Attachment",
+      "reqd": 1
+    },
+    {
+      "fieldname": "invoice_template",
+      "fieldtype": "Link",
+      "label": "Invoice Template",
+      "options": "Supplier Invoice Template"
+    },
+    {
+      "fieldname": "company",
+      "fieldtype": "Link",
+      "label": "Company",
+      "options": "Company"
+    },
+    {
+      "fieldname": "warehouse",
+      "fieldtype": "Link",
+      "label": "Warehouse",
+      "options": "Warehouse"
+    },
+    {
+      "default": "Uploaded",
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "in_list_view": 1,
+      "label": "Status",
+      "options": "Uploaded\nQueued\nProcessing\nReview Required\nDraft Created\nDuplicate\nFailed\nCancelled",
+      "read_only": 1
+    },
+    {
+      "fieldname": "confidence_score",
+      "fieldtype": "Percent",
+      "in_list_view": 1,
+      "label": "Confidence Score",
+      "precision": "2",
+      "read_only": 1
+    },
+    {
+      "fieldname": "linked_purchase_invoice",
+      "fieldtype": "Link",
+      "in_list_view": 1,
+      "label": "Linked Purchase Invoice",
+      "options": "Purchase Invoice",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_extraction",
+      "fieldtype": "Section Break",
+      "label": "Extraction"
+    },
+    {
+      "fieldname": "extracted_json",
+      "fieldtype": "Code",
+      "label": "Extracted JSON",
+      "options": "JSON"
+    },
+    {
+      "fieldname": "processing_logs",
+      "fieldtype": "Long Text",
+      "label": "Processing Logs",
+      "read_only": 1
+    },
+    {
+      "fieldname": "raw_ocr_text",
+      "fieldtype": "Long Text",
+      "hidden": 1,
+      "label": "Raw OCR Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "section_controls",
+      "fieldtype": "Section Break",
+      "label": "Controls"
+    },
+    {
+      "default": "0",
+      "fieldname": "auto_create_supplier",
+      "fieldtype": "Check",
+      "label": "Auto Create Supplier"
+    },
+    {
+      "default": "86",
+      "fieldname": "supplier_similarity_threshold",
+      "fieldtype": "Int",
+      "label": "Supplier Similarity Threshold"
+    },
+    {
+      "default": "82",
+      "fieldname": "item_similarity_threshold",
+      "fieldtype": "Int",
+      "label": "Item Similarity Threshold"
+    },
+    {
+      "fieldname": "last_error",
+      "fieldtype": "Long Text",
+      "label": "Last Error",
+      "read_only": 1
+    },
+    {
+      "default": "0",
+      "fieldname": "retry_count",
+      "fieldtype": "Int",
+      "label": "Retry Count",
+      "read_only": 1
+    },
+    {
+      "fieldname": "queued_at",
+      "fieldtype": "Datetime",
+      "label": "Queued At",
+      "read_only": 1
+    },
+    {
+      "fieldname": "processed_at",
+      "fieldtype": "Datetime",
+      "label": "Processed At",
+      "read_only": 1
+    }
+  ],
+  "index_web_pages_for_search": 1,
+  "links": [],
+  "modified": "2026-05-18 00:00:00.000000",
+  "modified_by": "Administrator",
+  "module": "Invoice Import",
+  "name": "Invoice Import",
+  "owner": "Administrator",
+  "permissions": [
+    {
+      "create": 1,
+      "delete": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "System Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Accounts Manager",
+      "share": 1,
+      "write": 1
+    },
+    {
+      "create": 1,
+      "email": 1,
+      "export": 1,
+      "print": 1,
+      "read": 1,
+      "report": 1,
+      "role": "Purchase Manager",
+      "share": 1,
+      "write": 1
+    }
+  ],
+  "quick_entry": 0,
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "states": [],
+  "track_changes": 1
+}

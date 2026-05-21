@@ -47,7 +47,13 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
         )
         return duplicate, warnings
 
-    company = getattr(import_doc, "company", None) or frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
+    company = (
+        getattr(import_doc, "company", None)
+        or data.get("company")
+        or frappe.defaults.get_user_default("Company")
+        or _get_template_company(getattr(import_doc, "invoice_template", None))
+        or frappe.db.get_single_value("Global Defaults", "default_company")
+    )
     if not company:
         frappe.throw(frappe._("Default Company is required to create Purchase Invoice."))
 
@@ -97,12 +103,13 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
         if conversion_alias:
             warnings.append(f"Item row {index}: applied UOM conversion {conversion_alias}")
         item_name = _get_item_name(item_match.item_code)
+        source_description = _get_source_description(row, item_name)
         pi.append(
             "items",
             {
                 "item_code": item_match.item_code,
                 "item_name": item_name,
-                "description": item_name,
+                "description": source_description,
                 "qty": qty or 1,
                 "uom": _get_item_stock_uom(item_match.item_code),
                 "rate": calculated_rate or source_rate,
@@ -158,6 +165,11 @@ def _get_item_name(item_code: str) -> str:
     return frappe.db.get_value("Item", item_code, "item_name") or item_code
 
 
+def _get_source_description(row: dict[str, Any], fallback: str) -> str:
+    description = str(row.get("description") or row.get("source_description") or "").strip()
+    return description or fallback
+
+
 def _is_item_disabled(item_code: str) -> bool:
     return bool(frappe.db.get_value("Item", item_code, "disabled"))
 
@@ -172,6 +184,15 @@ def _get_template_supplier(template_name: str) -> str | None:
         if supplier:
             return supplier
     return None
+
+
+def _get_template_company(template_name: str | None) -> str | None:
+    if not template_name:
+        return None
+    reference_pi = frappe.db.get_value("Supplier Invoice Template", template_name, "reference_purchase_invoice")
+    if not reference_pi:
+        return None
+    return frappe.db.get_value("Purchase Invoice", reference_pi, "company")
 
 
 def _match_payment_terms(value: str) -> str | None:

@@ -182,24 +182,25 @@ function render_item_row(item, index) {
     item.item_name ||
     "";
   const source_description = item.source_description || item.original_description || item._source_description || item.description || "";
+  const item_label = item._match_status?.item_name || item.item_name || item.item_code || "";
   return `
     <tr data-item-row>
-      <td style="text-align:center;vertical-align:middle;padding:3px 6px;"><strong data-item-serial>${index + 1}</strong></td>
-      <td style="width:78px;text-align:center;vertical-align:middle;padding:3px 6px;">${render_match_badge(item._match_status)}</td>
-      <td style="width:220px;max-width:220px;vertical-align:middle;padding:3px 6px;">
+      <td style="text-align:center;vertical-align:top;padding:0 3px;line-height:1;"><strong data-item-serial>${index + 1}</strong></td>
+      <td style="width:64px;text-align:center;vertical-align:top;padding:0 3px;line-height:1;">${render_match_badge(item._match_status)}</td>
+      <td style="width:220px;max-width:220px;vertical-align:top;padding:0 3px;">
         <div data-item-selector class="item-selector" style="width:100%;"></div>
-        ${render_matched_item_hint(item._match_status)}
         <input type="hidden" data-item-field="item_code" value="${frappe.utils.escape_html(String(item.item_code || item.item_name || ""))}">
+        <input type="hidden" data-item-field="item_label" value="${frappe.utils.escape_html(String(item_label))}">
         <input type="hidden" data-item-field="source_description" value="${frappe.utils.escape_html(String(source_description))}">
         <input type="hidden" data-item-field="source_qty" value="${frappe.utils.escape_html(String(item.source_qty || item.qty || 1))}">
         <input type="hidden" data-item-field="source_uom" value="${frappe.utils.escape_html(String(item.source_uom || item.uom || "Nos"))}">
       </td>
-      <td style="width:340px;max-width:340px;padding:3px 6px;"><input data-item-field="description" class="form-control input-sm" style="width:100%;height:24px;line-height:1;padding:2px 6px;" value="${frappe.utils.escape_html(String(display_description))}"></td>
-      <td style="width:70px;padding:3px 6px;"><input data-item-field="qty" class="form-control input-sm" style="width:100%;height:24px;line-height:1;padding:2px 6px;" value="${frappe.utils.escape_html(String(item.qty || 1))}"></td>
-      <td style="width:70px;padding:3px 6px;"><input data-item-field="uom" class="form-control input-sm" style="width:100%;height:24px;line-height:1;padding:2px 6px;" value="${frappe.utils.escape_html(String(item.uom || "Nos"))}"></td>
-      <td style="width:100px;padding:3px 6px;"><input data-item-field="rate" class="form-control input-sm" style="width:100%;height:24px;line-height:1;padding:2px 6px;" value="${frappe.utils.escape_html(String(item.rate || ""))}"></td>
-      <td style="width:100px;padding:3px 6px;"><input data-item-field="amount" class="form-control input-sm" style="width:100%;height:24px;line-height:1;padding:2px 6px;" value="${frappe.utils.escape_html(String(item.amount || ""))}"></td>
-      <td style="padding:3px 4px;"><button type="button" class="btn btn-xs btn-danger" data-action="remove-item" style="padding:2px 5px;line-height:1;">x</button></td>
+      <td style="width:340px;max-width:340px;padding:0 3px;vertical-align:top;"><input data-item-field="description" class="form-control input-sm" style="width:100%;height:18px;line-height:1;padding:0 4px;font-size:9px;margin:0;" value="${frappe.utils.escape_html(String(display_description))}"></td>
+      <td style="width:70px;padding:0 3px;vertical-align:top;"><input data-item-field="qty" class="form-control input-sm" style="width:100%;height:18px;line-height:1;padding:0 4px;font-size:9px;margin:0;" value="${frappe.utils.escape_html(String(item.qty || 1))}"></td>
+      <td style="width:70px;padding:0 3px;vertical-align:top;"><input data-item-field="uom" class="form-control input-sm" style="width:100%;height:18px;line-height:1;padding:0 4px;font-size:9px;margin:0;" value="${frappe.utils.escape_html(String(item.uom || "Nos"))}"></td>
+      <td style="width:100px;padding:0 3px;vertical-align:top;"><input data-item-field="rate" class="form-control input-sm" style="width:100%;height:18px;line-height:1;padding:0 4px;font-size:9px;margin:0;" value="${frappe.utils.escape_html(String(item.rate || ""))}"></td>
+      <td style="width:100px;padding:0 3px;vertical-align:top;"><input data-item-field="amount" class="form-control input-sm" style="width:100%;height:18px;line-height:1;padding:0 4px;font-size:9px;margin:0;" value="${frappe.utils.escape_html(String(item.amount || ""))}"></td>
+      <td style="padding:0 2px;vertical-align:top;"><button type="button" class="btn btn-xs btn-danger" data-action="remove-item" style="padding:0 3px;line-height:1;font-size:9px;">x</button></td>
     </tr>
   `;
 }
@@ -208,10 +209,10 @@ function render_matched_item_hint(status) {
   const item_code = status && status.item_code ? status.item_code : "";
   const item_name = status && status.item_name ? status.item_name : "";
   if (!item_code && !item_name) {
-    return `<div style="font-size:10px;color:#842029;line-height:1.2;margin-top:2px;">${__("No ERPNext item")}</div>`;
+    return `<div style="display:block;font-size:10px;color:#842029;line-height:1.2;font-weight:600;">${__("No ERPNext item")}</div>`;
   }
   const text = item_name && item_name !== item_code ? `${item_code} - ${item_name}` : item_code || item_name;
-  return `<div title="${frappe.utils.escape_html(text)}" style="font-size:10px;color:var(--text-muted);line-height:1.2;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${frappe.utils.escape_html(text)}</div>`;
+  return `<div title="${frappe.utils.escape_html(text)}" style="display:block;font-size:10px;color:var(--text-muted);line-height:1.2;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${frappe.utils.escape_html(text)}</div>`;
 }
 
 function render_match_badge(status) {
@@ -228,7 +229,7 @@ function render_match_badge(status) {
   const score = Number(state.score || 0);
   const title = [state.item_code, state.method, state.comment].filter(Boolean).join(" | ");
   return `
-    <span title="${frappe.utils.escape_html(title)}" style="display:inline-flex;align-items:center;justify-content:center;min-width:62px;border-radius:999px;padding:2px 7px;background:${color.bg};color:${color.fg};font-size:11px;font-weight:600;line-height:18px;">
+    <span title="${frappe.utils.escape_html(title)}" style="display:inline-flex;align-items:center;justify-content:center;min-width:52px;border-radius:999px;padding:0 5px;background:${color.bg};color:${color.fg};font-size:8px;font-weight:600;line-height:12px;">
       ${frappe.utils.escape_html(color.label)}${score ? ` ${Math.round(score)}%` : ""}
     </span>
   `;
@@ -313,7 +314,7 @@ function init_item_selectors($wrapper) {
 
     const $row = $holder.closest("tr");
     const $hidden = $row.find("[data-item-field='item_code']");
-    const $description = $row.find("[data-item-field='description']");
+    const $label = $row.find("[data-item-field='item_label']");
     $holder.data("initializing", true);
     const control = frappe.ui.form.make_control({
       parent: holder,
@@ -321,6 +322,7 @@ function init_item_selectors($wrapper) {
         fieldtype: "Link",
         label: "",
         options: "Item",
+        only_input: true,
         default: $hidden.val() || "",
         get_query() {
           return { filters: { disabled: 0 } };
@@ -329,6 +331,7 @@ function init_item_selectors($wrapper) {
           const item_code = control.get_value() || "";
           $hidden.val(item_code);
           if (item_code && !$holder.data("initializing")) {
+            set_item_selector_display($row, control, item_code);
             sync_row_description_from_item_code($row, item_code);
             learn_item_alias_from_row($row, item_code);
           }
@@ -338,17 +341,52 @@ function init_item_selectors($wrapper) {
     });
     control.refresh();
     if (control.$wrapper) {
-      control.$wrapper.css({ width: "100%", minHeight: "24px" });
-      control.$input.css({ width: "100%", height: "24px", padding: "2px 6px" });
+      control.$wrapper.css({ width: "100%", minHeight: "0", marginBottom: "0" });
+      control.$input.css({ width: "100%", height: "16px", padding: "0 4px", fontSize: "9px", lineHeight: "1", marginBottom: "0" });
     }
     if ($hidden.val()) {
       control.set_value($hidden.val());
+      set_item_selector_display($row, control, $hidden.val(), $label.val());
       sync_row_description_from_item_code($row, $hidden.val());
     }
     $hidden.val(control.get_value() || "");
     $holder.data("initializing", false);
     $holder.data("control-ready", true);
     $holder.data("control", control);
+  });
+}
+
+function set_item_selector_display($row, control, item_code, preferred_label = "") {
+  const $label = $row.find("[data-item-field='item_label']");
+  const item_label = preferred_label || $label.val() || item_code || "";
+  if (!item_code || !control) {
+    return;
+  }
+
+  const apply_label = (label) => {
+    const display = label || item_code;
+    control.title_value_map = control.title_value_map || {};
+    control.title_value_map[display] = item_code;
+    control.set_input_value(display);
+    $label.val(display);
+  };
+
+  if (item_label && item_label !== item_code) {
+    apply_label(item_label);
+    return;
+  }
+
+  frappe.call({
+    method: "frappe.client.get_value",
+    args: {
+      doctype: "Item",
+      filters: { name: item_code },
+      fieldname: "item_name",
+    },
+    callback(response) {
+      const label = (response.message && response.message.item_name) || item_code;
+      apply_label(label);
+    },
   });
 }
 

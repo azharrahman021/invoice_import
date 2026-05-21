@@ -9,7 +9,9 @@ def learn_from_purchase_invoice(doc, method: str | None = None) -> None:
     supplier = getattr(doc, "supplier", None)
     template_name = _get_template_for_supplier(supplier)
     for row in doc.items or []:
-        source_description = _normalize_text(getattr(row, "description", "") or getattr(row, "item_name", "") or "")
+        source_description = _normalize_text(
+            getattr(row, "description", "") or getattr(row, "source_description", "") or getattr(row, "item_name", "") or ""
+        )
         if not source_description or not getattr(row, "item_code", None):
             continue
         _persist_learning(

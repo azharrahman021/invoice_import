@@ -1,14 +1,19 @@
 {
- "actions": [],
- "allow_rename": 0,
- "autoname": "format:SIT-{#####}",
- "creation": "2026-05-20 00:00:00.000000",
- "doctype": "DocType",
- "editable_grid": 0,
- "engine": "InnoDB",
+  "actions": [],
+  "allow_rename": 0,
+  "autoname": "format:SIT-{#####}",
+  "creation": "2026-05-20 00:00:00.000000",
+  "doctype": "DocType",
+  "show_title_field_in_link": 1,
+  "editable_grid": 0,
+  "engine": "InnoDB",
+  "title_field": "supplier_name",
  "field_order": [
   "template_name",
   "supplier",
+  "supplier_name",
+  "company",
+  "warehouse",
   "reference_purchase_invoice",
   "is_active",
   "sample_invoice_file",
@@ -34,6 +39,26 @@
    "options": "Supplier"
   },
   {
+   "fetch_from": "supplier.supplier_name",
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supplier Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Default Company",
+   "options": "Company"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Default Warehouse",
+   "options": "Warehouse"
+  },
+  {
    "fieldname": "reference_purchase_invoice",
    "fieldtype": "Link",
    "label": "Reference Purchase Invoice",
@@ -55,6 +80,7 @@
   {
    "fieldname": "format_notes",
    "fieldtype": "Long Text",
+   "default": "Header:\n- Supplier name appears near top\n- Invoice No. label: \"Invoice No.\"\n- Invoice Date label: \"Date\" or \"Invoice Date\"\n- GSTIN appears near supplier name\n\nItem table:\n- Item rows start after the heading line\n- Columns usually include: description, hsn_sac, qty, uom, rate, amount\n- Item names may wrap to next line and should be merged\n- Ignore footer totals line\n\nUOM / HSN rules:\n- Common UOMs: Nos, PCS, Box, Pack, Roll, Bag, Doz\n- HSN is usually 6 to 8 digits\n- Allow HSN prefix matching\n- Prefer purchase UOM if item has one\n\nMatching rules:\n- Prefer learned supplier aliases first\n- If no alias exists, use HSN/spec/size/brand matching\n- Leave weak matches blank for manual review\n\nTotals / tax rules:\n- Grand total appears near bottom\n- Ignore numeric-only totals line in item parsing\n- Tax summary may appear separately at the end\n\nKnown aliases:\n- [source description] => [ERPNext item code]\n- [source description] => [ERPNext item code]",
    "label": "Format Notes",
    "reqd": 1
   },

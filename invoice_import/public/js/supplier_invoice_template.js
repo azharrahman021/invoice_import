@@ -1,10 +1,77 @@
 frappe.ui.form.on("Supplier Invoice Template", {
   refresh(frm) {
+    sync_template_defaults(frm);
+    if (frm.is_new() && !(frm.doc.format_notes || "").trim()) {
+      frm.set_value("format_notes", get_default_format_notes());
+    }
+
     if (!frm.is_new()) {
       frm.add_custom_button(__("Graphical Mapper"), () => open_graphical_mapper(frm));
     }
   },
+
+  supplier(frm) {
+    sync_template_defaults(frm, true);
+  },
+
+  reference_purchase_invoice(frm) {
+    sync_template_defaults(frm, true);
+  },
 });
+
+function sync_template_defaults(frm, force = false) {
+  frappe.call({
+    method: "invoice_import.api.invoice_import.get_template_defaults",
+    args: {
+      template_name: frm.doc.name && !frm.is_new() ? frm.doc.name : "",
+      supplier: frm.doc.supplier || "",
+      reference_purchase_invoice: frm.doc.reference_purchase_invoice || "",
+    },
+    callback(response) {
+      const defaults = response.message || {};
+      if (defaults.company && (force || !frm.doc.company)) {
+        frm.set_value("company", defaults.company);
+      }
+      if (defaults.warehouse && (force || !frm.doc.warehouse)) {
+        frm.set_value("warehouse", defaults.warehouse);
+      }
+    },
+  });
+}
+
+function get_default_format_notes() {
+  return `Header:
+- Supplier name appears near top
+- Invoice No. label: "Invoice No."
+- Invoice Date label: "Date" or "Invoice Date"
+- GSTIN appears near supplier name
+
+Item table:
+- Item rows start after the heading line
+- Columns usually include: description, hsn_sac, qty, uom, rate, amount
+- Item names may wrap to next line and should be merged
+- Ignore footer totals line
+
+UOM / HSN rules:
+- Common UOMs: Nos, PCS, Box, Pack, Roll, Bag, Doz
+- HSN is usually 6 to 8 digits
+- Allow HSN prefix matching
+- Prefer purchase UOM if item has one
+
+Matching rules:
+- Prefer learned supplier aliases first
+- If no alias exists, use HSN/spec/size/brand matching
+- Leave weak matches blank for manual review
+
+Totals / tax rules:
+- Grand total appears near bottom
+- Ignore numeric-only totals line in item parsing
+- Tax summary may appear separately at the end
+
+Known aliases:
+- [source description] => [ERPNext item code]
+- [source description] => [ERPNext item code]`;
+}
 
 function open_graphical_mapper(frm) {
   frappe.require(["pdfjs.bundle.css", "print_designer.bundle.css"]);

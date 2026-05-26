@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 import frappe
-from frappe.utils import flt, getdate, nowdate
+from frappe.utils import cint, flt, getdate, nowdate
 
 from invoice_import.services.duplicate_checker import find_duplicate_purchase_invoice
 from invoice_import.services.item_matcher import match_item
@@ -13,6 +13,18 @@ from invoice_import.services.uom_conversion import apply_learned_uom_conversion
 
 
 def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
+    pi = frappe.new_doc("Purchase Invoice")
+    return _save_purchase_invoice(pi, import_doc, data, is_update=False)
+
+
+def update_draft_purchase_invoice(purchase_invoice: str, import_doc, data: dict[str, Any]):
+    pi = frappe.get_doc("Purchase Invoice", purchase_invoice)
+    if cint(getattr(pi, "docstatus", 0)) != 0:
+        frappe.throw(frappe._("Purchase Invoice {0} is already submitted and cannot be updated from review.").format(purchase_invoice))
+    return _save_purchase_invoice(pi, import_doc, data, is_update=True)
+
+
+def _save_purchase_invoice(pi, import_doc, data: dict[str, Any], is_update: bool):
     supplier_match = match_supplier(
         data,
         threshold=int(import_doc.supplier_similarity_threshold or 86),
@@ -34,7 +46,7 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
         return None, warnings
 
     duplicate = find_duplicate_purchase_invoice(supplier_match.supplier, data)
-    if duplicate:
+    if duplicate and not is_update:
         frappe.db.set_value(
             "Invoice Import",
             import_doc.name,
@@ -57,7 +69,6 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
     if not company:
         frappe.throw(frappe._("Default Company is required to create Purchase Invoice."))
 
-    pi = frappe.new_doc("Purchase Invoice")
     pi.company = company
     pi.supplier = supplier_match.supplier
     pi.bill_no = data.get("invoice_number")
@@ -69,6 +80,9 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
         pi.currency = data.get("currency")
     if data.get("payment_terms"):
         pi.payment_terms_template = _match_payment_terms(data.get("payment_terms")) or None
+
+    if is_update:
+        _clear_purchase_invoice_rows(pi)
 
     matched_count = 0
     for index, row in enumerate(data.get("items") or [], start=1):
@@ -110,8 +124,9 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
                 "item_code": item_match.item_code,
                 "item_name": item_name,
                 "description": source_description,
+                "gst_hsn_code": str(row.get("hsn_sac") or "").strip() or None,
                 "qty": qty or 1,
-                "uom": _get_item_stock_uom(item_match.item_code),
+                "uom": str(row.get("uom") or "").strip() or _get_item_stock_uom(item_match.item_code),
                 "rate": calculated_rate or source_rate,
                 "price_list_rate": source_rate or calculated_rate,
                 "amount": line_amount or ((calculated_rate or source_rate) * (qty or 1)),
@@ -142,8 +157,11 @@ def create_draft_purchase_invoice(import_doc, data: dict[str, Any]):
     pi.flags.ignore_permissions = True
     if getattr(import_doc, "warehouse", None):
         pi.set("set_warehouse", import_doc.warehouse)
-    pi.insert()
-    _attach_source_file(pi.name, import_doc.attachment)
+    if is_update:
+        pi.save()
+    else:
+        pi.insert()
+        _attach_source_file(pi.name, import_doc.attachment)
     return pi.name, warnings
 
 
@@ -214,3 +232,10 @@ def _attach_source_file(purchase_invoice: str, file_url: str) -> None:
 
 def _append_log(existing: str | None, message: str) -> str:
     return "\n".join(filter(None, [existing, message]))
+
+
+def _clear_purchase_invoice_rows(pi) -> None:
+    if pi.meta.has_field("items"):
+        pi.set("items", [])
+    if pi.meta.has_field("taxes"):
+        pi.set("taxes", [])

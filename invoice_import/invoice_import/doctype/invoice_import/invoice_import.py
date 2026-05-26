@@ -13,16 +13,54 @@ ALLOWED_EXTENSIONS: Final[set[str]] = {".pdf", ".jpg", ".jpeg", ".png", ".heic",
 DEFAULT_MAX_UPLOAD_MB: Final[int] = 20
 
 
+def infer_previous_import_defaults() -> dict[str, str]:
+    if not hasattr(frappe.db, "sql"):
+        return {"company": "", "warehouse": ""}
+    rows = frappe.db.sql(
+        """
+        SELECT company, warehouse
+        FROM `tabInvoice Import`
+        WHERE docstatus < 2
+          AND (IFNULL(company, '') != '' OR IFNULL(warehouse, '') != '')
+        ORDER BY modified DESC, creation DESC
+        LIMIT 1
+        """,
+        as_dict=True,
+    )
+    if not rows:
+        return {"company": "", "warehouse": ""}
+    row = rows[0]
+    return {
+        "company": str(row.get("company") or "").strip(),
+        "warehouse": str(row.get("warehouse") or "").strip(),
+    }
+
+
 class InvoiceImport(Document):
     def validate(self) -> None:
         self._validate_attachment()
         self._set_defaults()
+
+    def on_trash(self) -> None:
+        self._delete_learning_examples()
 
     def before_insert(self) -> None:
         if not self.status:
             self.status = "Uploaded"
 
     def _set_defaults(self) -> None:
+        if self.invoice_template:
+            template_company = frappe.db.get_value("Supplier Invoice Template", self.invoice_template, "company") or ""
+            template_warehouse = frappe.db.get_value("Supplier Invoice Template", self.invoice_template, "warehouse") or ""
+            if not self.company and template_company:
+                self.company = template_company
+            if not self.warehouse and template_warehouse:
+                self.warehouse = template_warehouse
+        previous_defaults = infer_previous_import_defaults()
+        if not self.company and previous_defaults.get("company"):
+            self.company = previous_defaults["company"]
+        if not self.warehouse and previous_defaults.get("warehouse"):
+            self.warehouse = previous_defaults["warehouse"]
         if not self.company:
             self.company = frappe.defaults.get_user_default("Company") or frappe.db.get_single_value("Global Defaults", "default_company")
         if not self.warehouse and self.company:
@@ -63,6 +101,15 @@ class InvoiceImport(Document):
             guessed_type.startswith("image/") or guessed_type == "application/pdf"
         ):
             frappe.throw(frappe._("Unsupported MIME type {0}").format(guessed_type))
+
+    def _delete_learning_examples(self) -> None:
+        examples = frappe.get_all(
+            "Supplier Invoice Template Example",
+            filters={"invoice_import": self.name},
+            pluck="name",
+        )
+        for example_name in examples:
+            frappe.delete_doc("Supplier Invoice Template Example", example_name, force=1, ignore_permissions=True)
 
 
 def _get_file_doc(file_url: str):

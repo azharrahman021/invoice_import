@@ -4,6 +4,8 @@ from typing import Any
 
 import frappe
 
+ALLOWED_ALIAS_TYPES = {"manual", "auto", "review"}
+
 
 def learn_from_purchase_invoice(doc, method: str | None = None) -> None:
     supplier = getattr(doc, "supplier", None)
@@ -19,7 +21,7 @@ def learn_from_purchase_invoice(doc, method: str | None = None) -> None:
             supplier=supplier,
             source_description=source_description,
             item_code=row.item_code,
-            alias_type="pi",
+            alias_type="auto",
             notes=f"Learned from submitted Purchase Invoice {doc.name}",
         )
 
@@ -71,6 +73,7 @@ def _persist_learning(
         )
         if existing:
             alias = frappe.get_doc("Supplier Item Alias", existing)
+            alias.alias_type = _normalize_alias_type(alias.alias_type)
             alias.hit_count = (alias.hit_count or 0) + 1
             alias.save(ignore_permissions=True)
             return
@@ -80,7 +83,7 @@ def _persist_learning(
         alias.supplier = supplier
         alias.source_description = source_description
         alias.item_code = item_code
-        alias.alias_type = alias_type
+        alias.alias_type = _normalize_alias_type(alias_type)
         alias.hit_count = 1
         alias.is_active = 1
         alias.notes = notes
@@ -99,6 +102,11 @@ def _resolve_item_code(item_name_or_code: str) -> str | None:
 
 def _normalize_text(value: str) -> str:
     return " ".join(str(value or "").split()).strip()
+
+
+def _normalize_alias_type(alias_type: str | None) -> str:
+    value = _normalize_text(alias_type or "").lower()
+    return value if value in ALLOWED_ALIAS_TYPES else "auto"
 
 
 def _get_template_for_supplier(supplier: str | None) -> str | None:

@@ -29,6 +29,9 @@ KNOWN_UOMS = {
     "pack",
     "pkt",
     "box",
+    "bag",
+    "doz",
+    "roll",
     "kg",
     "kgs",
     "nos",
@@ -126,8 +129,14 @@ def _extract_items_from_text(
 
     lines = _page_text_lines(page)
     start_index = _find_item_table_start_index(lines, rows, profile)
-    item_lines = _guess_item_lines(lines[start_index:] if start_index < len(lines) else lines)
-    return [_parse_item_line(line, index) for index, line in enumerate(item_lines, start=1)]
+    relevant_lines = lines[start_index:] if start_index < len(lines) else lines
+    numbered_rows = _collect_numbered_item_rows(relevant_lines)
+    if not numbered_rows:
+        numbered_rows = [(line, "", "") for line in _guess_item_lines(relevant_lines)]
+    return [
+        _parse_item_line(line, index, context_before=before, context_after=after)
+        for index, (line, before, after) in enumerate(numbered_rows, start=1)
+    ]
 
 
 def _normalize_item_row(row: dict[str, Any]) -> dict[str, Any] | None:
@@ -197,6 +206,8 @@ def _extract_value_from_lines(lines: list[str], source_label: str, value_hint: s
                         if gstin:
                             return gstin.group(0)
                     return value
+                if target_field == "supplier" and compact == label_norm:
+                    return _normalize_text(line)
                 if index + 1 < len(normalized_lines):
                     next_line = _normalize_text(normalized_lines[index + 1])
                     if next_line and _normalize_header_line(next_line) not in {label_norm, "tax invoice credit", "tax invoice"}:
@@ -374,9 +385,19 @@ def _guess_item_lines(lines: list[str]) -> list[str]:
             break
     return candidates[:100]
 
+def _collect_numbered_item_rows(lines: list[str]) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    for index, line in enumerate(lines):
+        if not _looks_like_item_row(line):
+            continue
+        before = _normalize_text(lines[index - 1]) if index > 0 and not _looks_like_item_row(lines[index - 1]) else ""
+        after = _normalize_text(lines[index + 1]) if index + 1 < len(lines) and not _looks_like_item_row(lines[index + 1]) else ""
+        rows.append((line, before, after))
+    return rows[:100]
 
-def _parse_item_line(line: str, index: int) -> dict[str, Any]:
-    tokens = [token for token in re.split(r"\s+", line.strip()) if token]
+
+def _parse_item_line(line: str, index: int, context_before: str = "", context_after: str = "") -> dict[str, Any]:
+    tokens = _split_fused_hsn_tokens([token for token in re.split(r"\s+", line.strip()) if token])
     numbers = [flt(value.replace(",", "")) for value in re.findall(r"[-+]?\d[\d,]*\.?\d*", line)]
     if not tokens:
         return {
@@ -422,6 +443,14 @@ def _parse_item_line(line: str, index: int) -> dict[str, Any]:
         rate = numbers[-2] if len(numbers) >= 2 else 0.0
 
     description = _extract_item_description(tokens, offset=offset, hsn_index=hsn_index, uom_index=uom_index)
+    if (not description or description.lower().startswith("ocr item line") or len(description.split()) < 2) and context_before:
+        if re.search(r"[A-Za-z]", context_before) and not re.search(r"\d{4,}", context_before):
+            description = context_before
+    if context_after and _should_append_wrapped_description(description, context_after):
+        description = f"{description} {context_after}".strip()
+    elif (not description or description.lower().startswith("ocr item line") or len(description.split()) < 2) and context_after:
+        if re.search(r"[A-Za-z]", context_after) and not re.search(r"\d{4,}", context_after):
+            description = context_after
     hsn_sac = tokens[hsn_index] if hsn_index is not None else ""
     return {
         "item_code": "",
@@ -454,6 +483,8 @@ def _extract_item_description(
     after_hsn = tokens[(hsn_index + 1) if hsn_index is not None else offset : uom_index] if uom_index is not None else tokens[(hsn_index + 1) if hsn_index is not None else offset :]
     while after_hsn and re.fullmatch(r"[-+]?\d[\d,]*\.?\d*", after_hsn[-1]):
         after_hsn.pop()
+    if len(after_hsn) > 1 and re.fullmatch(r"[A-Za-z]", after_hsn[0]) and re.search(r"[A-Za-z]", after_hsn[1]):
+        after_hsn = after_hsn[1:]
 
     before_text = " ".join(before_hsn).strip(" -|")
     after_text = " ".join(after_hsn).strip(" -|")
@@ -469,8 +500,43 @@ def _extract_item_description(
     return ""
 
 
+def _split_fused_hsn_tokens(tokens: list[str]) -> list[str]:
+    split_tokens: list[str] = []
+    for token in tokens:
+        text = str(token or "").strip()
+        if not text:
+            continue
+        match = re.match(r"^(\d{4,8})([A-Za-z].*)$", text)
+        if match:
+            split_tokens.append(match.group(1))
+            split_tokens.append(match.group(2))
+            continue
+        split_tokens.append(text)
+    return split_tokens
+
+
+def _should_append_wrapped_description(description: str, context_after: str) -> bool:
+    base = _normalize_text(description)
+    extra = _normalize_text(context_after)
+    if not base or not extra:
+        return False
+    if not re.search(r"[A-Za-z]", extra):
+        return False
+    if re.search(r"\b(total|taxable|round off|grand total|net total)\b", extra, re.I):
+        return False
+    if re.search(r"\bqty\b|\brate\b|\bamount\b|\buom\b|\bhsn\b", extra, re.I):
+        return False
+    if re.search(r"\b\d{6,8}\b", extra):
+        return False
+    if len(extra.split()) > 8:
+        return False
+    if len(base.split()) < 8:
+        return True
+    return bool(re.search(r"[A-Za-z]", extra))
+
+
 def _looks_like_item_row(line: str) -> bool:
-    tokens = [token for token in re.split(r"\s+", line.strip()) if token]
+    tokens = _split_fused_hsn_tokens([token for token in re.split(r"\s+", line.strip()) if token])
     if len(tokens) < 6 or not re.fullmatch(r"\d+", tokens[0]):
         return False
 
@@ -500,9 +566,16 @@ def _parse_float(value: Any) -> float:
 def _find_uom_token_index(tokens: list[str], start_index: int = 0) -> int | None:
     for index in range(start_index, len(tokens)):
         cleaned = tokens[index].lower().strip(".,;:/()[]{}")
-        if cleaned in KNOWN_UOMS:
+        if cleaned in KNOWN_UOMS and _has_numeric_tail(tokens, index + 1):
             return index
     return None
+
+
+def _has_numeric_tail(tokens: list[str], start_index: int) -> bool:
+    for token in tokens[start_index : start_index + 2]:
+        if re.fullmatch(r"[-+]?\d[\d,]*\.?\d*", str(token or "").strip()):
+            return True
+    return False
 
 
 def _find_hsn_token_index(tokens: list[str], start_index: int = 0) -> int | None:

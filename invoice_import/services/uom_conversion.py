@@ -174,6 +174,29 @@ def _persist_uom_conversion(
     doc.insert(ignore_permissions=True)
 
 
+def learn_purchase_uoms_from_payload(
+    *,
+    template: str | None,
+    supplier: str | None,
+    corrected_items: list[dict[str, Any]],
+    source_doc: str | None = None,
+) -> None:
+    for corrected in corrected_items:
+        item_code = _resolve_item_code(corrected.get("item_code") or corrected.get("item_name") or "")
+        chosen_uom = _normalize_text(corrected.get("uom") or "")
+        if not item_code or not chosen_uom:
+            continue
+        if not frappe.db.exists("UOM", chosen_uom):
+            continue
+        current_purchase_uom = _normalize_text(frappe.db.get_value("Item", item_code, "purchase_uom") or "")
+        stock_uom = _normalize_text(frappe.db.get_value("Item", item_code, "stock_uom") or "")
+        if current_purchase_uom and current_purchase_uom != stock_uom:
+            continue
+        if current_purchase_uom == chosen_uom:
+            continue
+        frappe.db.set_value("Item", item_code, "purchase_uom", chosen_uom, update_modified=True)
+
+
 def _resolve_item_code(value: str) -> str | None:
     value = _normalize_text(value)
     if not value:
